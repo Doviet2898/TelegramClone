@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Clone</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Màn hình đăng nhập/đăng ký -->
+        <div id="auth-screen" class="auth-screen">
+            <div class="auth-container">
+                <div class="logo">
+                    <i class="fab fa-telegram"></i>
+                    <h1>Telegram Clone</h1>
+                </div>
+                <div class="auth-tabs">
+                    <button class="tab-btn active" data-tab="login">Đăng nhập</button>
+                    <button class="tab-btn" data-tab="register">Đăng ký</button>
+                </div>
+                <div class="auth-form-container">
+                    <form id="login-form" class="auth-form active">
+                        <div class="form-group">
+                            <label for="login-username">Tên người dùng</label>
+                            <input type="text" id="login-username" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="login-password">Mật khẩu</label>
+                            <input type="password" id="login-password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Đăng nhập</button>
+                        <p id="login-error" class="error-message"></p>
+                    </form>
+                    <form id="register-form" class="auth-form">
+                        <div class="form-group">
+                            <label for="register-username">Tên người dùng</label>
+                            <input type="text" id="register-username" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="register-password">Mật khẩu</label>
+                            <input type="password" id="register-password" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="register-confirm-password">Xác nhận mật khẩu</label>
+                            <input type="password" id="register-confirm-password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Đăng ký</button>
+                        <p id="register-error" class="error-message"></p>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Màn hình chính -->
+        <div id="main-screen" class="main-screen hidden">
+            <!-- Sidebar - Danh sách người dùng -->
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <div class="current-user-info">
+                        <div class="avatar-container">
+                            <img id="current-user-avatar" src="default-avatar.png" alt="Avatar">
+                            <div class="avatar-upload">
+                                <label for="avatar-input">
+                                    <i class="fas fa-camera"></i>
+                                </label>
+                                <input type="file" id="avatar-input" accept="image/*">
+                            </div>
+                        </div>
+                        <div class="user-details">
+                            <h3 id="current-username">Username</h3>
+                            <span class="status online">Online</span>
+                        </div>
+                    </div>
+                    <button id="logout-btn" class="btn-icon">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+                <div class="search-container">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="search-input" placeholder="Tìm kiếm người dùng...">
+                </div>
+                <div id="users-list" class="users-list">
+                    <!-- Danh sách người dùng sẽ được thêm vào đây bằng JavaScript -->
+                </div>
+            </div>
+
+            <!-- Khu vực chat -->
+            <div class="chat-area">
+                <div id="empty-chat" class="empty-chat">
+                    <i class="far fa-comment-dots"></i>
+                    <p>Chọn một người dùng để bắt đầu trò chuyện</p>
+                </div>
+
+                <div id="chat-container" class="chat-container hidden">
+                    <div class="chat-header">
+                        <div class="chat-user-info">
+                            <img id="chat-user-avatar" src="default-avatar.png" alt="Avatar">
+                            <div>
+                                <h3 id="chat-username">Username</h3>
+                                <span id="chat-status" class="status">Offline</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="messages-container" class="messages-container">
+                        <!-- Tin nhắn sẽ được thêm vào đây bằng JavaScript -->
+                    </div>
+
+                    <div id="typing-indicator" class="typing-indicator hidden">
+                        <span>Đang nhập...</span>
+                    </div>
+
+                    <div class="message-input-container">
+                        <div class="attachment-btn">
+                            <label for="file-input">
+                                <i class="fas fa-paperclip"></i>
+                            </label>
+                            <input type="file" id="file-input" accept="image/*">
+                        </div>
+                        <input type="text" id="message-input" placeholder="Nhập tin nhắn...">
+                        <button id="send-btn" class="btn-icon">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
