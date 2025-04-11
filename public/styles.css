@@ -464,3 +464,207 @@ body {
         width: 90%;
     }
 }
+
+/* Styles cho modal */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-content {
+    background-color: #fff;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid #e6e6e6;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 18px;
+    color: #333;
+}
+
+.close-modal {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #999;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.members-list {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #e6e6e6;
+    border-radius: 4px;
+    margin-top: 10px;
+    padding: 10px;
+}
+
+.member-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 0;
+}
+
+.member-item input[type="checkbox"] {
+    margin-right: 10px;
+}
+
+/* Styles cho cuộc gọi */
+.call-interface {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #000;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+}
+
+.call-interface.hidden {
+    display: none;
+}
+
+.call-header {
+    padding: 15px;
+    text-align: center;
+    color: #fff;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.call-header h3 {
+    margin: 0 0 5px;
+    font-size: 18px;
+}
+
+.call-header p {
+    margin: 0;
+    font-size: 14px;
+}
+
+.call-content {
+    flex: 1;
+    position: relative;
+}
+
+.remote-video-container {
+    width: 100%;
+    height: 100%;
+}
+
+.remote-video-container video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.local-video-container {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    width: 150px;
+    height: 112px;
+    border: 2px solid #fff;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.local-video-container video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.call-controls {
+    display: flex;
+    justify-content: center;
+    padding: 15px;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.call-controls .btn-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    margin: 0 10px;
+    font-size: 18px;
+}
+
+.call-controls .btn-icon:nth-child(3) {
+    background-color: #f44336;
+}
+
+/* Styles cho sidebar actions */
+.sidebar-actions {
+    display: flex;
+}
+
+.sidebar-actions .btn-icon {
+    margin-left: 10px;
+}
+
+/* Styles cho nút gọi */
+.chat-actions {
+    display: flex;
+}
+
+.chat-actions .btn-icon {
+    margin-left: 10px;
+}
+
+/* Styles cho công cụ tin nhắn */
+.message-tools {
+    display: flex;
+    align-items: center;
+}
+
+.message-tools .btn-icon,
+.message-tools .attachment-btn {
+    margin-right: 10px;
+}
+
+/* Styles cho tin nhắn tự hủy */
+.message-bubble.self-destruct {
+    background-color: #ffcdd2;
+}
+
+.message-bubble.self-destruct .message-content {
+    font-style: italic;
+}
+
+/* Styles cho nhóm chat */
+.user-item.group-item {
+    background-color: rgba(0, 132, 255, 0.05);
+}
+
+.user-item.group-item img {
+    background-color: #0084ff;
+}

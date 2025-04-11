@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
     <div class="app-container">
         <!-- Màn hình đăng nhập/đăng ký -->
@@ -73,13 +75,18 @@
                             <span class="status online">Online</span>
                         </div>
                     </div>
-                    <button id="logout-btn" class="btn-icon">
-                        <i class="fas fa-sign-out-alt"></i>
-                    </button>
+                    <div class="sidebar-actions">
+                        <button id="create-group-btn" class="btn-icon" title="Tạo nhóm mới">
+                            <i class="fas fa-users"></i>
+                        </button>
+                        <button id="logout-btn" class="btn-icon" title="Đăng xuất">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="search-container">
                     <i class="fas fa-search"></i>
-                    <input type="text" id="search-input" placeholder="Tìm kiếm người dùng...">
+                    <input type="text" id="search-input" placeholder="Tìm kiếm người dùng hoặc nhóm...">
                 </div>
                 <div id="users-list" class="users-list">
                     <!-- Danh sách người dùng sẽ được thêm vào đây bằng JavaScript -->
@@ -90,7 +97,7 @@
             <div class="chat-area">
                 <div id="empty-chat" class="empty-chat">
                     <i class="far fa-comment-dots"></i>
-                    <p>Chọn một người dùng để bắt đầu trò chuyện</p>
+                    <p>Chọn một người dùng hoặc nhóm để bắt đầu trò chuyện</p>
                 </div>
 
                 <div id="chat-container" class="chat-container hidden">
@@ -101,6 +108,14 @@
                                 <h3 id="chat-username">Username</h3>
                                 <span id="chat-status" class="status">Offline</span>
                             </div>
+                        </div>
+                        <div class="chat-actions">
+                            <button id="audio-call-btn" class="btn-icon" title="Gọi thoại">
+                                <i class="fas fa-phone"></i>
+                            </button>
+                            <button id="video-call-btn" class="btn-icon" title="Gọi video">
+                                <i class="fas fa-video"></i>
+                            </button>
                         </div>
                     </div>
 
@@ -113,11 +128,14 @@
                     </div>
 
                     <div class="message-input-container">
-                        <div class="attachment-btn">
-                            <label for="file-input">
-                                <i class="fas fa-paperclip"></i>
-                            </label>
-                            <input type="file" id="file-input" accept="image/*">
+                        <div class="message-tools">
+                            <div class="attachment-btn">
+                                <label for="file-input">
+                                    <i class="fas fa-paperclip"></i>
+                                </label>
+                                <input type="file" id="file-input"
+                                    accept="image/*,video/*,audio/*,application/pdf,.doc,.docx,.xls,.xlsx">
+                            </div>
                         </div>
                         <input type="text" id="message-input" placeholder="Nhập tin nhắn...">
                         <button id="send-btn" class="btn-icon">
@@ -127,9 +145,64 @@
                 </div>
             </div>
         </div>
+
+        <!-- Modal tạo nhóm chat -->
+        <div id="create-group-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Tạo nhóm mới</h2>
+                    <button class="close-modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="create-group-form">
+                        <div class="form-group">
+                            <label for="group-name">Tên nhóm</label>
+                            <input type="text" id="group-name" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Thành viên</label>
+                            <div id="members-list" class="members-list">
+                                <!-- Danh sách thành viên sẽ được thêm vào đây -->
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Tạo nhóm</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Giao diện cuộc gọi -->
+        <div id="call-interface" class="call-interface hidden">
+            <div class="call-header">
+                <h3 id="call-type">Cuộc gọi video</h3>
+                <p id="call-status">Đang kết nối...</p>
+            </div>
+            <div class="call-content">
+                <div id="remote-video-container" class="remote-video-container">
+                    <video id="remoteVideo" autoplay></video>
+                </div>
+                <div id="local-video-container" class="local-video-container">
+                    <video id="localVideo" autoplay muted></video>
+                </div>
+            </div>
+            <div class="call-controls">
+                <button id="toggle-audio-btn" class="btn-icon" title="Tắt/Bật mic">
+                    <i class="fas fa-microphone"></i>
+                </button>
+                <button id="toggle-video-btn" class="btn-icon" title="Tắt/Bật camera">
+                    <i class="fas fa-video"></i>
+                </button>
+                <button id="end-call-btn" class="btn-icon" title="Kết thúc cuộc gọi">
+                    <i class="fas fa-phone-slash"></i>
+                </button>
+            </div>
+        </div>
     </div>
 
+    <!-- Polyfill cho các trình duyệt cũ -->
+    <script src="https://cdn.polyfill.io/v3/polyfill.min.js?features=default,fetch"></script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="app.js"></script>
 </body>
+
 </html>

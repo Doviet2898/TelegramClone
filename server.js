@@ -7,6 +7,7 @@ const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
 const path = require('path');
 const multer = require('multer');
+const cors = require('cors');
 
 // Cấu hình môi trường
 dotenv.config();
@@ -26,6 +27,13 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Cấu hình CORS
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 // Cấu hình lưu trữ file
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -38,12 +46,26 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 // Kết nối MongoDB
-mongoose.connect('mongodb://localhost:27017/telegramClone', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
+mongoose.set('strictQuery', false);
+
+// Thử kết nối với URI từ biến môi trường
+mongoose.connect(process.env.MONGODB_URI)
 .then(() => console.log('Đã kết nối với MongoDB'))
-.catch(err => console.error('Lỗi kết nối MongoDB:', err));
+.catch(err => {
+  console.error('Lỗi kết nối MongoDB:', err);
+  // Thử kết nối với MongoDB địa phương nếu kết nối Atlas thất bại
+  const localUri = 'mongodb://127.0.0.1:27017/telegramClone';
+  
+  mongoose.connect(localUri, { serverSelectionTimeoutMS: 5000 })
+    .then(() => console.log('Đã kết nối với MongoDB địa phương'))
+    .catch(localErr => {
+      console.error('Không thể kết nối với MongoDB:', localErr);
+      console.log('Sử dụng MongoDB memory để phát triển...');
+      
+      // Nếu không thể kết nối với cả hai, tiếp tục chạy ứng dụng
+      // Trong môi trường thực tế, có thể nên dừng ứng dụng ở đây
+    });
+});
 
 // Định nghĩa Schema
 const userSchema = new mongoose.Schema({
@@ -60,12 +82,21 @@ const messageSchema = new mongoose.Schema({
   content: { type: String, required: true },
   timestamp: { type: Date, default: Date.now },
   isRead: { type: Boolean, default: false },
-  type: { type: String, enum: ['text', 'image'], default: 'text' },
+  type: { type: String, enum: ['text', 'image', 'file'], default: 'text' },
   fileUrl: { type: String }
+});
+
+const groupSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  creator: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  members: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  avatar: { type: String, default: 'default-group-avatar.png' },
+  createdAt: { type: Date, default: Date.now }
 });
 
 const User = mongoose.model('User', userSchema);
 const Message = mongoose.model('Message', messageSchema);
+const Group = mongoose.model('Group', groupSchema);
 
 // API Routes
 
@@ -100,17 +131,25 @@ app.post('/api/register', async (req, res) => {
 // Đăng nhập
 app.post('/api/login', async (req, res) => {
   try {
+    console.log('Nhận yêu cầu đăng nhập:', req.body);
     const { username, password } = req.body;
+    
+    if (!username || !password) {
+      console.log('Thiếu thông tin đăng nhập');
+      return res.status(400).json({ message: 'Vui lòng cung cấp tên người dùng và mật khẩu' });
+    }
     
     // Tìm người dùng
     const user = await User.findOne({ username });
     if (!user) {
+      console.log('Không tìm thấy người dùng:', username);
       return res.status(400).json({ message: 'Tên người dùng hoặc mật khẩu không đúng' });
     }
     
     // Kiểm tra mật khẩu
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
+      console.log('Mật khẩu không đúng cho người dùng:', username);
       return res.status(400).json({ message: 'Tên người dùng hoặc mật khẩu không đúng' });
     }
     
@@ -125,7 +164,7 @@ app.post('/api/login', async (req, res) => {
     user.status = 'online';
     await user.save();
     
-    res.status(200).json({
+    const responseData = {
       message: 'Đăng nhập thành công',
       token,
       user: {
@@ -133,8 +172,12 @@ app.post('/api/login', async (req, res) => {
         username: user.username,
         avatar: user.avatar
       }
-    });
+    };
+    
+    console.log('Đăng nhập thành công cho người dùng:', username);
+    res.status(200).json(responseData);
   } catch (error) {
+    console.error('Lỗi server khi đăng nhập:', error.message);
     res.status(500).json({ message: 'Lỗi server', error: error.message });
   }
 });
@@ -235,15 +278,17 @@ io.on('connection', (socket) => {
     try {
       const { senderId, receiverId, content, type, fileUrl } = data;
       
-      // Lưu tin nhắn vào database
-      const newMessage = new Message({
+      // Chuẩn bị dữ liệu tin nhắn
+      const messageData = {
         sender: senderId,
         receiver: receiverId,
         content,
         type,
         fileUrl
-      });
+      };
       
+      // Lưu tin nhắn vào database
+      const newMessage = new Message(messageData);
       await newMessage.save();
       
       // Gửi tin nhắn đến người nhận nếu online
@@ -344,6 +389,127 @@ io.on('connection', (socket) => {
       });
     }
   });
+
+  // Xử lý tạo nhóm mới
+  socket.on('createGroup', async (data) => {
+    try {
+      const { name, members, creatorId } = data;
+      
+      // Kiểm tra dữ liệu đầu vào
+      if (!name || !members || !Array.isArray(members) || !creatorId) {
+        socket.emit('groupError', { error: 'Dữ liệu không hợp lệ' });
+        return;
+      }
+      
+      // Thêm người tạo vào danh sách thành viên nếu chưa có
+      if (!members.includes(creatorId)) {
+        members.push(creatorId);
+      }
+      
+      // Tạo nhóm mới
+      const newGroup = new Group({
+        name,
+        creator: creatorId,
+        members
+      });
+      
+      await newGroup.save();
+      
+      // Lấy thông tin đầy đủ của nhóm bao gồm thông tin thành viên
+      const populatedGroup = await Group.findById(newGroup._id)
+        .populate('members', 'username avatar status')
+        .populate('creator', 'username avatar');
+      
+      // Thông báo cho tất cả thành viên về nhóm mới
+      members.forEach(memberId => {
+        const memberSocketId = onlineUsers.get(memberId);
+        if (memberSocketId) {
+          io.to(memberSocketId).emit('newGroup', populatedGroup);
+        }
+      });
+      
+      // Phản hồi cho người tạo nhóm
+      socket.emit('groupCreated', populatedGroup);
+    } catch (error) {
+      console.error('Lỗi khi tạo nhóm qua socket:', error);
+      socket.emit('groupError', { error: 'Không thể tạo nhóm' });
+    }
+  });
+});
+
+// API để tạo nhóm mới
+app.post('/api/groups', authenticate, async (req, res) => {
+  try {
+    const { name, members } = req.body;
+    
+    if (!name || !members || !Array.isArray(members)) {
+      return res.status(400).json({ message: 'Tên nhóm và danh sách thành viên là bắt buộc' });
+    }
+    
+    // Thêm người tạo nhóm vào danh sách thành viên nếu chưa có
+    if (!members.includes(req.userData.userId)) {
+      members.push(req.userData.userId);
+    }
+    
+    const newGroup = new Group({
+      name,
+      creator: req.userData.userId,
+      members
+    });
+    
+    await newGroup.save();
+    
+    // Populate thông tin thành viên để trả về
+    const populatedGroup = await Group.findById(newGroup._id)
+      .populate('members', 'username avatar status')
+      .populate('creator', 'username avatar');
+    
+    res.status(201).json(populatedGroup);
+  } catch (error) {
+    console.error('Lỗi khi tạo nhóm:', error);
+    res.status(500).json({ message: 'Lỗi server', error: error.message });
+  }
+});
+
+// API để lấy danh sách nhóm của người dùng
+app.get('/api/groups', authenticate, async (req, res) => {
+  try {
+    const groups = await Group.find({ members: req.userData.userId })
+      .populate('members', 'username avatar status')
+      .populate('creator', 'username avatar');
+    
+    res.status(200).json(groups);
+  } catch (error) {
+    console.error('Lỗi khi lấy danh sách nhóm:', error);
+    res.status(500).json({ message: 'Lỗi server', error: error.message });
+  }
+});
+
+// API để lấy tin nhắn của nhóm
+app.get('/api/groups/:groupId/messages', authenticate, async (req, res) => {
+  try {
+    // Kiểm tra xem người dùng có phải là thành viên của nhóm không
+    const group = await Group.findById(req.params.groupId);
+    if (!group) {
+      return res.status(404).json({ message: 'Không tìm thấy nhóm' });
+    }
+    
+    if (!group.members.includes(req.userData.userId)) {
+      return res.status(403).json({ message: 'Bạn không phải là thành viên của nhóm này' });
+    }
+    
+    // Lấy tin nhắn của nhóm
+    const messages = await Message.find({ 
+      receiver: req.params.groupId,
+      type: { $in: ['text', 'image', 'file'] }
+    }).sort({ timestamp: 1 })
+      .populate('sender', 'username avatar');
+    
+    res.status(200).json(messages);
+  } catch (error) {
+    console.error('Lỗi khi lấy tin nhắn nhóm:', error);
+    res.status(500).json({ message: 'Lỗi server', error: error.message });
+  }
 });
 
 // Tạo thư mục uploads nếu chưa tồn tại
